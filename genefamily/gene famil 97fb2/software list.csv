@@ -1,0 +1,7 @@
+﻿Name,version,下载和安装方法
+orthofinder,2.3.12,用conda安装
+jmodeltest2,2.1.10,https://github.com/ddarriba/jmodeltest2下载最新版本
+pal2nal,v14,http://www.bork.embl.de/pal2nal/#Download下载
+phyml,3.3.20190909,conda install -c bioconda phyml
+raxml-ng,,conda install -c bioconda raxml-ng
+paml,4.9d,官网下载
