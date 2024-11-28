@@ -201,12 +201,13 @@ perl scripts/7.cat_cds.pl gblocksoutdir/gblocksgbs mergedcdss
 ### 4.2.8 生成phylip文件
 
 这里有个很有趣的事情，就是有时候`convertFasta2Phylip.sh`的换行符会出现变化，然后就无法使用，所以建议直接用包里面的脚本。
+新增了一个perl脚本，因为新版本的paml可能要求种名和序列之间有两个空格，建议用perl脚本进行转换。
 
 ```bash
 mkdir finalseqs
 cat mergedcdss/*fa >finalseqs/final.fa
 cd finalseqs
-sh ../scripts/convertFasta2Phylip.sh final.fa >final.phy
+perl ../scripts/fasta2phylip.pl final.fa >final.phy
 ```
 
 ---
@@ -460,7 +461,7 @@ perl scripts/7.cat_cds.pl gblocksoutdir/gblocksgbs mergedcdss
 mkdir finalseqs
 cat mergedcdss/*fa >finalseqs/final.fa
 cd finalseqs
-sh ../scripts/convertFasta2Phylip.sh final.fa >final.phy
+perl ../scripts/fasta2phylip.pl final.fa >final.phy
 mkdir tree
 cd tree
 ln -s ../finalseqs/final.phy .
@@ -856,22 +857,49 @@ foreach my $species (@species){
 
 ---
 
-### convertFasta2Phylip.sh
+### fasta2phylip.pl
 
-```bash
-#! /bin/sh
+```perl
+#!/usr/bin/perl
+use strict;
+use warnings;
 
-if [ $# != 1 ]; then
-    echo "USAGE: ./script <fasta-file>"
-    exit
-fi
+# 检查输入参数
+if (@ARGV != 1) {
+    die "USAGE: ./script.pl <fasta-file>\n";
+}
 
-numSpec=$(grep -c  ">" $1)
-tmp=$(cat $1 | sed "s/>[ ]*\(\w*\).*/;\1</"  | tr -d "\n" | tr -d ' '  | sed 's/^;//' | tr "<" " " )
-length=$(($(echo $tmp | sed 's/[^ ]* \([^;]*\);.*/\1/'   | wc -m ) - 1))
+# 打开输入文件
+my $file = $ARGV[0];
+open(my $fh, '<', $file) or die "Could not open file '$file': $!";
 
-echo "$numSpec $length"
-echo  $tmp | tr ";" "\n"
+my @lines = <$fh>;
+close($fh);
+
+# 初始化变量
+my $num_species = 0;
+my $all_sequences = "";
+my @output_lines;
+
+foreach my $line (@lines) {
+    chomp $line;
+
+    if ($line =~ /^>(\S+)/) { # 提取种名
+        my $species_name = $1;
+        $num_species++;
+        push @output_lines, "$species_name  "; # 添加种名，后面两个空格
+    } else { # 处理序列
+        $output_lines[-1] .= $line; # 将序列附加到当前种名后
+        $all_sequences .= $line;   # 统计所有序列
+    }
+}
+
+# 计算序列总长度
+my $sequence_length = length($all_sequences);
+
+# 输出结果
+print "$num_species $sequence_length\n";
+print join("\n", @output_lines), "\n";
 ```
 
 ---
